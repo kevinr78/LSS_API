@@ -5,7 +5,8 @@ const { spawn } = require("child_process");
 require("dotenv").config();
 app.use(express.json());
 
-const User = require("./models/userSchema");
+const User = require("./models/userSchema"); 
+const Category = require("./models/categorySchema"); 
 
 const connectionParams = {
   useNewUrlParser: true,
@@ -27,19 +28,19 @@ app.get("/", async (req, res) => {
 
 app.post("/recommendations", async (req, res) => {
   try {
-    let { userId, location, ToD } = req.body;
-    console.log(userId);
-    let checkIfCustomerExist = await User.findOne({ User_id: userId });
-    if (!checkIfCustomerExist) {
+    let { userId, lat, lng, ToD } = req.body;
+    
+    let checkIfCustomerExist = await User.findOne({ user_id: userId });
+   
+   if (!checkIfCustomerExist) {
       throw new Error("Sorry Customer does not exist");
-    } else {
-      console.log(checkIfCustomerExist);
-    }
-
-    const pyRecommendation = spawn("python", ["data.py", checkIfCustomerExist]);
+   
+   }
+   let getCategory = await Category.find({ user_id: userId });
+    const pyRecommendation = spawn("python", ["data_model.py",userId,lat,lng,ToD]);
 
     pyRecommendation.stdout.on("data", function (data) {
-      return res.status(200).send({ ok: true, message: data.toString() });
+      return res.status(200).send({ ok: true, message: data.toString()});
     });
 
     pyRecommendation.stderr.on("data", (data) => {
